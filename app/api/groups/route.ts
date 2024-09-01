@@ -1,12 +1,16 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import GroupModel from '@/lib/models/GroupSchema';
+import { NextApiRequest, NextApiResponse } from 'next';
+
+
 
 export const POST = async (request: NextRequest) => {
   await dbConnect();
 
   try {
     const { name, image, admin, members } = await request.json();
+    console.log(request.body)
 
     const newGroup = new GroupModel({ name, image, admin, members });
     await newGroup.save();
@@ -17,6 +21,10 @@ export const POST = async (request: NextRequest) => {
     return Response.json({ message: 'Internal Server Error' }, { status: 500 });
   }
 };
+
+
+
+
 
 export const GET = async (request: NextRequest) => {
   await dbConnect();

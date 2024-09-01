@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { X, Search } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { toast } from 'react-toastify';
 
 type User = {
   _id: string;
@@ -14,9 +16,15 @@ type CreateGroupChatModalProps = {
 };
 
 const CreateGroupChatModal: React.FC<CreateGroupChatModalProps> = ({ isOpen, onClose, users }) => {
+
+  console.log("USERS ARRAY PASSED IS------->>>>>>",users)
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
   const [searchResults, setSearchResults] = useState<User[]>(users);
+  const [groupName, setGroupName] = useState('');
+  const [groupImage, setGroupImage] = useState<File | null>(null); // File or null
+
+  const { data: session } = useSession();
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const term = e.target.value;
@@ -34,6 +42,87 @@ const CreateGroupChatModal: React.FC<CreateGroupChatModalProps> = ({ isOpen, onC
     setSelectedUsers(selectedUsers.filter(selected => selected._id !== user._id));
   };
 
+  // Handle file upload for images
+  const uploadHandler = async (file: File): Promise<string | null> => {
+    const toastId = toast.loading('Uploading image...');
+    try {
+      const resSign = await fetch('/api/cloudinary-sign', { method: 'POST' });
+      const { signature, timestamp } = await resSign.json();
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('signature', signature);
+      formData.append('timestamp', timestamp);
+      formData.append('api_key', process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY!);
+      
+
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/upload`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
+      const data = await res.json();
+
+      if (res.ok) {
+        toast.success('File uploaded successfully');
+        return data.secure_url;
+      } else {
+        throw new Error(data.error.message || 'Image upload failed');
+      }
+    } catch (err: any) {
+      toast.error(err.message);
+      return null;
+    }
+  };
+
+  const handleCreateGroup = async () => {
+    if (!groupName || selectedUsers.length === 0) {
+      alert('Please enter a group name and select at least one user.');
+      return;
+    }
+  
+    // Upload the group image and get the URL
+    let groupImageUrl = null;
+    if (groupImage) {
+      groupImageUrl = await uploadHandler(groupImage);
+    }
+  
+    // Prepare the JSON object
+    const groupData = {
+      name: groupName,
+      image: groupImageUrl,
+      admin: session?.user?._id as string,
+      members: selectedUsers.map(user => user._id),
+    };
+  
+    // Log the JSON object
+    console.log('Group Data to be sent:', groupData);
+  
+    try {
+      const response = await fetch('/api/groups', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(groupData),
+      });
+  
+      if (response.ok) {
+        const newGroup = await response.json();
+        console.log('Group created successfully:', newGroup);
+        onClose();
+      } else {
+        console.error('Failed to create group');
+      }
+    } catch (error) {
+      console.error('Error creating group:', error);
+    }
+  };
+  
+  
+
   if (!isOpen) return null;
 
   return (
@@ -46,7 +135,35 @@ const CreateGroupChatModal: React.FC<CreateGroupChatModalProps> = ({ isOpen, onC
           <X />
         </button>
         <h2 className="text-lg font-semibold mb-4">Create Group Chat</h2>
-        
+
+        {/* Group Name Input */}
+        <input
+          type="text"
+          placeholder="Group Name"
+          value={groupName}
+          onChange={(e) => setGroupName(e.target.value)}
+          className="mb-4 w-full p-2 border rounded-lg"
+        />
+
+        {/* Group Image Upload */}
+        <div className="mb-4">
+          <label className="block text-gray-700 mb-2">Group Image</label>
+          <input
+            type="file"
+            onChange={(e) => setGroupImage(e.target.files ? e.target.files[0] : null)}
+            className="w-full text-gray-700 p-2 border rounded-lg"
+          />
+          {groupImage && (
+            <div className="mt-2">
+              <img
+                src={URL.createObjectURL(groupImage)}
+                alt="Group Preview"
+                className="w-32 h-32 object-cover rounded-full border"
+              />
+            </div>
+          )}
+        </div>
+
         {/* Selected Users */}
         <div className="flex flex-wrap gap-2 mb-4 max-h-24 overflow-auto p-1 border border-gray-200 rounded-lg">
           {selectedUsers.map(user => (
@@ -102,6 +219,13 @@ const CreateGroupChatModal: React.FC<CreateGroupChatModalProps> = ({ isOpen, onC
             ))}
           </div>
         </div>
+
+        <button
+          onClick={handleCreateGroup}
+          className="mt-4 w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600"
+        >
+          Create Group
+        </button>
       </div>
     </div>
   );

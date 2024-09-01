@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import ChatTemplate from '../ChatTemplate/ChatTemplate';
 import { User } from '../Messages/model';
 import { SingleMessage } from '@/lib/models/SingleMessageSchema';
+import { useSession } from 'next-auth/react';
 
 const idString = '64e44f14f3c3e82bcecfb5e0';
 
@@ -38,6 +39,10 @@ const dummyReceiver: User = {
 const Messages: React.FC = () => {
   const [messages, setMessages] = useState<SingleMessage[]>([]);
   
+  const { data: session } = useSession()
+  console.log(session)
+
+
   useEffect(() => {
     const fetchMessages = async () => {
       try {
