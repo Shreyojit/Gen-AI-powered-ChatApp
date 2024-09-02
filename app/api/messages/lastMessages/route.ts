@@ -3,6 +3,7 @@ import dbConnect from '@/lib/dbConnect';
 import SingleMessageModel from '@/lib/models/SingleMessageSchema';
 import GroupMessageModel from '@/lib/models/GroupMessageSchema';
 import mongoose from 'mongoose';
+import GroupModel from '@/lib/models/GroupSchema';
 
 export async function GET(request: NextRequest) {
   await dbConnect();
@@ -145,5 +146,6 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
 
 

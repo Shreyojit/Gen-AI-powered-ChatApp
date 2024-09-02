@@ -18,7 +18,7 @@ const GroupMemberSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
-    isAdmin: { type: Boolean, default: false },
+   
   },
   { timestamps: true }
 );
