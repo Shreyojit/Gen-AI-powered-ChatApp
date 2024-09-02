@@ -14,13 +14,13 @@ const Chat = () => {
       <Sidebar />
 
       {/* MESSAGES */}
-      <div className="flex-1 p-4 flex items-center justify-center">
+      
         {selectedConversationId || selectedGroupId ? (
           <Messages selectedConversationId={selectedConversationId} selectedGroupId={selectedGroupId} />
         ) : (
           <div className="text-gray-500 text-lg">NO CHATS SELECTED!!</div>
         )}
-      </div>
+      
     </div>
   );
 };
