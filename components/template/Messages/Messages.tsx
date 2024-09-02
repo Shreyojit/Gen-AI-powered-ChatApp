@@ -1,19 +1,14 @@
-"use client"
-import Pusher from 'pusher-js';
+"use client";
 import React, { useEffect, useState } from 'react';
+import Pusher from 'pusher-js';
 import ChatTemplate from '../ChatTemplate/ChatTemplate';
+import GroupChatTemplate from '../GroupChatTemplate/GroupChatTemplate';
 import { User } from '../Messages/model';
 import { SingleMessage } from '@/lib/models/SingleMessageSchema';
+import { GroupMessage } from '@/lib/models/GroupMessageSchema';
+
 import { useSession } from 'next-auth/react';
 
-const idString = '64e44f14f3c3e82bcecfb5e0';
-
-// Convert the string to an object
-const object = {
-  id: idString
-};
-
-// Replace these with your actual user and receiver data
 const dummyUser: User = {
   _id: '66cf6e8ced78a4952dfd79c5',
   name: 'John Doe',
@@ -36,72 +31,132 @@ const dummyReceiver: User = {
   updatedAt: new Date().toISOString(),
 };
 
-const Messages: React.FC = () => {
-  const [messages, setMessages] = useState<SingleMessage[]>([]);
-  
-  const { data: session } = useSession()
-  console.log(session)
+const dummyGroupId = '66d0dd1fe485466d430ca6a4';
 
+type Message = SingleMessage | GroupMessage;
+
+const Messages: React.FC<{ selectedConversationId?: string; selectedGroupId?: string }> = ({ selectedConversationId, selectedGroupId }) => {
+  const [messages, setMessages] = useState<Message[]>([]);
+  
+  const { data: session } = useSession();
 
   useEffect(() => {
-    const fetchMessages = async () => {
-      try {
-        const response = await fetch(
-          'http://localhost:3000/api/messages/single?senderId=66cf6e8ced78a4952dfd79c5&receiverId=66cf73b32ab5595510905b7f'
-        );
-        const data: SingleMessage[] = await response.json();
-        setMessages(data);
-      } catch (error) {
-        console.error('Error fetching messages:', error);
+    if (selectedConversationId) {
+      const fetchMessages = async () => {
+        try {
+          const response = await fetch(
+            `http://localhost:3000/api/messages/single?senderId=${dummyUser._id}&receiverId=${dummyReceiver._id}`
+          );
+          const data: SingleMessage[] = await response.json();
+          setMessages(data);
+        } catch (error) {
+          console.error('Error fetching messages:', error);
+        }
+      };
+  
+      fetchMessages();
+  
+      const pusher = new Pusher("00b691724236d02babc5", {
+        cluster: "ap2",
+      });
+  
+      const channel = pusher.subscribe(`user-${dummyReceiver._id}`);
+  
+      channel.bind('singleMessage', (data: SingleMessage) => {
+        setMessages(prevMessages => {
+          if (prevMessages.some(msg => (msg as SingleMessage)._id === data._id)) {
+            return prevMessages;
+          }
+          return [...prevMessages, data];
+        });
+      });
+  
+      return () => {
+        channel.unbind_all();
+        channel.unsubscribe();
+      };
+  
+    } else if (selectedGroupId) {
+      const fetchMessages = async () => {
+        try {
+          const response = await fetch(`http://localhost:3000/api/messages/group?groupId=${selectedGroupId}`);
+          const data: GroupMessage[] = await response.json();
+          setMessages(data);
+        } catch (error) {
+          console.error('Error fetching messages:', error);
+        }
+      };
+  
+      fetchMessages();
+  
+      const pusher = new Pusher('00b691724236d02babc5', {
+        cluster: 'ap2',
+      });
+  
+      const channel = pusher.subscribe(`group-${selectedGroupId}`);
+  
+      channel.bind('groupMessage', (data: GroupMessage) => {
+        setMessages(prevMessages => {
+          if (prevMessages.some(msg => (msg as GroupMessage)._id === data._id)) {
+            return prevMessages;
+          }
+          return [...prevMessages, data];
+        });
+      });
+  
+      return () => {
+        channel.unbind('groupMessage');
+        channel.unsubscribe();
+      };
+    }
+  }, [selectedConversationId, selectedGroupId]);
+
+  const handleSendMessage = (message: SingleMessage | GroupMessage) => {
+    setMessages(prevMessages => {
+      if (prevMessages.length === 0) {
+        return [message];
       }
-    };
-
-    fetchMessages();
-
-    // Initialize Pusher
-    const pusher = new Pusher("00b691724236d02babc5", {
-      cluster: "ap2",
+  
+      const isSingle = (prevMessages[0] as SingleMessage).receiver !== undefined;
+      const isGroup = (prevMessages[0] as GroupMessage).groupId !== undefined;
+  
+      if (isSingle && (message as SingleMessage).receiver !== undefined) {
+        return [...prevMessages as SingleMessage[], message as SingleMessage];
+      } else if (isGroup && (message as GroupMessage).groupId !== undefined) {
+        return [...prevMessages as GroupMessage[], message as GroupMessage];
+      }
+  
+      return prevMessages;
     });
-
-    // Subscribe to the user's channel
-    const channel = pusher.subscribe(`user-${dummyReceiver._id}`);
-
-    // Bind to the 'singleMessage' event
-    channel.bind('singleMessage', (data: SingleMessage) => {
-      setMessages((prevMessages) => [...prevMessages, data]);
-    });
-
-    // Cleanup
-    return () => {
-      channel.unbind_all();
-      channel.unsubscribe();
-    };
-  }, []);
-
-  const handleSendMessage = (message: SingleMessage) => {
-    setMessages((prevMessages) => [...prevMessages, message]);
   };
+
+  if (!selectedConversationId && !selectedGroupId) {
+    return <div className="text-gray-500 text-lg">NO CHATS SELECTED!!</div>;
+  }
 
   return (
     <div className="w-screen h-screen flex">
-      <ChatTemplate 
-        user={dummyUser} 
-        receiver={dummyReceiver} 
-        messages={messages} 
-        onSendMessage={handleSendMessage} 
-      />
+      {selectedConversationId ? (
+        <ChatTemplate
+          user={dummyUser}
+          receiver={dummyReceiver}
+          messages={messages as SingleMessage[]}
+          onSendMessage={handleSendMessage}
+        />
+      ) : (
+        <GroupChatTemplate
+          user={dummyUser}
+          groupId={selectedGroupId || ''}
+          messages={messages as GroupMessage[]}
+          onSendMessage={handleSendMessage}
+          groupMembers={[]} // Replace with actual group members
+        />
+      )}
     </div>
   );
 };
 
 export default Messages;
-
-
-
-
-
-
-
 
 
 

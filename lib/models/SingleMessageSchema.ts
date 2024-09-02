@@ -1,13 +1,14 @@
 import mongoose from 'mongoose';
 
 export type SingleMessage = {
+  _id?: string; // Make sure to add this
   sender: string; // User ID
   receiver: string; // User ID
   message?: string;
   mediaUrl?: string; // URL of the media file
   mediaType?: 'photo' | 'video';
   cloudinaryId?: string; // Optional: Store the Cloudinary public ID for easier management
-  sentAt: Date;
+  sentAt?: Date;
   receivedAt?: Date;
   readAt?: Date;
 };

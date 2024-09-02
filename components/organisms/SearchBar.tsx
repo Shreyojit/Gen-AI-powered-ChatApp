@@ -73,9 +73,9 @@ const SearchBar: React.FC<SearchBarProps> = ({ user }) => {
         <IconButton onClick={handleOpenModal} className="ml-2" />
       </div>
 
-      {/* Row 2: SearchBarInput */}
-      <div className="mt-4">
-        <SearchBarInput placeholder="Search" />
+       {/* Row 2: SearchBarInput */}
+       <div className="mt-4">
+        <SearchBarInput placeholder="Search" users={users} />
       </div>
 
       <CreateGroupChatModal

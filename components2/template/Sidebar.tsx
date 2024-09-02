@@ -1,5 +1,5 @@
-"use client";
 
+"use client"
 import React, { useEffect, useState } from 'react';
 import SearchBar from '@/components/organisms/SearchBar';
 import { userProps } from '@/types';
@@ -17,11 +17,10 @@ const Sidebar = () => {
 
     if (session && session.user) {
       const userData: userProps = {
-        _id: session.user._id, // Assuming _id exists in session.user
+        _id: session.user._id || '', // Default to empty string if _id is undefined
         name: session.user.name || '',
         email: session.user.email || '',
         imageId: session.user.image || '',
-       
         messages: [], // Provide an empty array or actual messages if available
       };
       setUser(userData);
@@ -37,7 +36,7 @@ const Sidebar = () => {
       {/* SEARCHBAR */}
       {user && <SearchBar user={user} />}
       {/* CHATLIST */}
-      <ChatList />
+      {user?._id && <ChatList userId={user._id} />} {/* Ensure userId is defined */}
     </div>
   );
 };

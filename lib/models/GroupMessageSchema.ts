@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 
 export type GroupMessage = {
+  _id?: string; // Make sure to add this
   groupId: string;
   senderId: string; // User ID
   message?: string;

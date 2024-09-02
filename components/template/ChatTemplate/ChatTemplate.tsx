@@ -3,6 +3,7 @@ import { MdAttachFile, MdEmojiEmotions, MdSend, MdPhone, MdVideocam } from "reac
 import { SingleMessage } from '@/lib/models/SingleMessageSchema';
 import { User } from '../Messages/model';
 import Link from 'next/link'
+import { useSession } from 'next-auth/react';
 
 interface ChatTemplateProps {
   user: User;
@@ -12,6 +13,10 @@ interface ChatTemplateProps {
 }
 
 const ChatTemplate: React.FC<ChatTemplateProps> = ({ user, receiver, messages, onSendMessage }) => {
+
+  const { data: session } = useSession();
+
+  console.log("CHECK THIS ________________________________>",session?.user._id)
   const [inputValue, setInputValue] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null); // Ref to track the end of the messages list
 
