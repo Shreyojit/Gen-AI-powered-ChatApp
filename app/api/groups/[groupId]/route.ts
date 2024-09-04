@@ -1,25 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import GroupModel from '@/lib/models/GroupSchema';
+import mongoose from 'mongoose';
 
-// Handler for GET requests
-export const GET = async (request: NextRequest, { params }: { params: { groupId: string } }) => {
+
+export async function GET(request: NextRequest, { params }: { params: { groupId: string } }) {
+  console.log('Handler triggered');
+  console.log('Params:', params);
   await dbConnect();
 
   const { groupId } = params;
+  console.log('Group ID:', groupId);
 
   try {
-    const group = await GroupModel.findById(groupId).populate('admin members', '-password');
-    if (!group) {
-      return NextResponse.json({ message: 'Group not found.' }, { status: 404 });
+    // Validate the groupId format
+    if (!mongoose.Types.ObjectId.isValid(groupId)) {
+      return NextResponse.json({ message: 'Invalid group ID' }, { status: 400 });
     }
-    return NextResponse.json(group, { status: 200 });
+
+    // Fetch the group by ID and populate members
+    const group = await GroupModel.findById(groupId).populate('members', '-password').exec();
+
+    if (!group) {
+      return NextResponse.json({ message: 'Group not found' }, { status: 404 });
+    }
+
+    // Return the group details along with members
+    return NextResponse.json({
+      group: {
+        _id: group._id,
+        name: group.name,
+        image: group.image,
+        admin: group.admin,
+        createdAt: group.createdAt,
+        updatedAt: group.updatedAt,
+      },
+      members: group.members,
+    }, { status: 200 });
   } catch (error) {
-    console.error('Error fetching group:', error);
+    console.error('Error fetching group members:', error);
     return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
   }
-};
-
+}
 // Handler for PATCH requests
 export const PATCH = async (request: NextRequest, { params }: { params: { groupId: string } }) => {
   await dbConnect();

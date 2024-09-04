@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import ChatListItem from '../molecules/ChatListItem';
 import { useGroupStore } from '@/lib/hooks/groupStore';
+import { useChatStore } from '@/lib/hooks/singleStore';
+import { useSession } from 'next-auth/react';
 
 interface SingleMessage {
   conversationId: string;
@@ -44,7 +46,15 @@ const ChatList: React.FC<ChatListProps> = ({ userId }) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const { groups } = useGroupStore(); // Use Zustand store to fetch groups
-console.log(groups);
+  const { selectedUser } = useChatStore();
+  const selectedUserString = selectedUser?.name?.toString();
+  console.log("CURRENT USER-------------->")
+  console.log("THIS IS TEST FOR LIFE Selected user------>",selectedUserString,typeof(selectedUserString))
+  const { data: session, status } = useSession();
+  const currentUser = session?.user.name
+  console.log("CURRENT USER-------------->",currentUser,typeof(currentUser))
+
+
   useEffect(() => {
     const fetchChatData = async () => {
       try {

@@ -149,11 +149,15 @@ export interface GroupChatTemplateProps {
   groupId: string;
   messages: GroupMessage[];
   onSendMessage: (message: GroupMessage) => void;
+  groupName: string; // Add this line
+  groupAdmin: string;
   groupMembers: User[];
 }
 
-const GroupChatTemplate: React.FC<GroupChatTemplateProps> = ({ user, groupId, messages, onSendMessage, groupMembers }) => {
-  console.log("groupId----------->",groupId,typeof(groupId))
+
+
+const GroupChatTemplate: React.FC<GroupChatTemplateProps> = ({ user, groupId, messages, onSendMessage, groupName, groupAdmin, groupMembers }) => {
+  console.log("groupId----------->",user,groupId,typeof(groupId),groupMembers)
   const [inputValue, setInputValue] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -259,7 +263,7 @@ const GroupChatTemplate: React.FC<GroupChatTemplateProps> = ({ user, groupId, me
     <div className="bg-white flex flex-col h-full w-full shadow-lg">
       {/* Topbar */}
       <div className="bg-gray-100 border-b border-gray-300 flex items-center justify-between p-4">
-        <h3 className="font-semibold text-lg">Group Chat</h3>
+        <h3 className="font-semibold text-lg">{ groupName}</h3>
         <div className="flex items-center gap-3">
           {groupMembers.map(member => (
             <div key={member._id} className="w-12 h-12 rounded-full overflow-hidden">
