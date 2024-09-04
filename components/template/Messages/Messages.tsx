@@ -25,6 +25,7 @@ interface GroupData {
 type Message = SingleMessage | GroupMessage;
 
 const Messages: React.FC<{ selectedConversationId?: string; selectedGroupId?: string }> = ({ selectedConversationId, selectedGroupId }) => {
+ console.log("THIS IS TEST FOR SELECTEDCONVID---->",selectedConversationId)
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [receiver, setReceiver] = useState<User | null>(null);
