@@ -6,6 +6,8 @@ import pusher from '@/lib/pusher'; // Import the common Pusher instance
 import mongoose from 'mongoose';
 
 
+const ObjectId = mongoose.Types.ObjectId;
+
 
 export async function POST(request: NextRequest) {
   await dbConnect();
@@ -13,15 +15,41 @@ export async function POST(request: NextRequest) {
   try {
     const { groupId, senderId, message, type } = await request.json();
 
+    console.log('Received Request Data:', { groupId, senderId, message, type });
+
+    // Fetch the group to ensure it exists
     const group = await GroupModel.findById(groupId);
+    console.log('Fetched Group:', group);
+
     if (!group) {
+      console.error('Group not found:', groupId);
       return NextResponse.json({ message: 'Group not found.' }, { status: 404 });
     }
+    console.log("GROUP ADMIN--->",group.admin,typeof(group.admin))
+    console.log("SEnderId---->",senderId,typeof(senderId))
 
-    if (!group.members.includes(senderId)) {
-      return NextResponse.json({ message: 'Sender is not a member of the group.' }, { status: 403 });
-    }
 
+
+    const senderObjectId = new ObjectId(senderId);
+
+    console.log("GROUP ADMIN--->", group.admin, typeof(group.admin));
+    console.log("SenderId---->", senderObjectId, typeof(senderObjectId));
+
+    
+
+    const isSenderAdmin = group.admin.equals(senderId);
+    console.log('Is Sender Admin:', isSenderAdmin);
+
+    // Check if sender is part of the group
+    const isSenderMember = group.members.includes(senderId);
+    console.log('Is Sender a Member of the Group:', isSenderMember);
+
+    // if (!isSenderMember && !isSenderAdmin) {
+    //   console.warn('Sender is not a member of the group:', { groupId, senderId });
+    //   return NextResponse.json({ message: 'Sender is not a member of the group.' }, { status: 403 });
+    // }
+
+    // Create and save the new message
     const newMessage = new GroupMessageModel({
       groupId,
       senderId,
@@ -29,16 +57,18 @@ export async function POST(request: NextRequest) {
       type,
       sentAt: new Date(),
     });
+    console.log('New Message Object:', newMessage);
 
     await newMessage.save();
+    console.log('New Message Saved:', newMessage);
 
-     // Trigger the event to the group channel
-     const groupResult = await pusher.trigger(`group-${groupId}`, 'groupMessage', newMessage);
-     console.log('Group Event Triggered:', groupResult);
+    // Trigger the event to the group channel
+    const groupResult = await pusher.trigger(`group-${groupId}`, 'groupMessage', newMessage);
+    console.log('Group Event Triggered:', groupResult);
 
     return NextResponse.json(newMessage, { status: 201 });
   } catch (error) {
-    console.error('Error creating message:', error);
+    console.error('Error deleting message:', error);
     return NextResponse.json({ message: 'Internal Server Error', error }, { status: 500 });
   }
 }

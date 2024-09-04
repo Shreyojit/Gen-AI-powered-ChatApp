@@ -7,11 +7,13 @@ import pusher from '@/lib/pusher';
 
 
 export async function POST(request: NextRequest) {
-  await dbConnect();
+  await dbConnect(); // Connect to the database
 
   try {
+    // Extract the necessary fields from the request body
     const { senderId, receiverId, message, type } = await request.json();
 
+    // Create a new message instance
     const newMessage = new SingleMessageModel({
       sender: senderId,
       receiver: receiverId,
@@ -19,21 +21,27 @@ export async function POST(request: NextRequest) {
       type,
       sentAt: new Date(),
     });
-    console.log("New Mesage",newMessage)
 
+    // Log the new message object for debugging
+    console.log('New Message:', newMessage);
+
+    // Save the message to the database
     await newMessage.save();
 
-    // Trigger an event
-const result = await pusher.trigger(`user-${receiverId}`, 'singleMessage', newMessage);
-console.log('Event Triggered:', result);
+    // Trigger a Pusher event to notify the receiver in real-time
+    const result = await pusher.trigger(`user-${receiverId}`, 'singleMessage', newMessage);
+    console.log('Event Triggered:', result);
 
+    // Return the saved message with a 201 status code
     return NextResponse.json(newMessage, { status: 201 });
   } catch (error) {
+    // Log any errors that occur during the process
     console.error('Error creating message:', error);
+
+    // Return an error response with a 500 status code
     return NextResponse.json({ message: 'Internal Server Error', error }, { status: 500 });
   }
 }
-
 
 
 

@@ -9,7 +9,7 @@ import { useSession } from 'next-auth/react';
 const Sidebar = () => {
   const { data: session, status } = useSession();
   const [user, setUser] = useState<userProps | undefined>();
-
+console.log("SIDEBAR DATA USER----------->",session)
   useEffect(() => {
     if (status === 'loading') {
       return;

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { X, Search } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { toast } from 'react-toastify';
+import { useGroupStore } from '@/lib/hooks/groupStore';
+
 
 type User = {
   _id: string;
@@ -16,15 +18,14 @@ type CreateGroupChatModalProps = {
 };
 
 const CreateGroupChatModal: React.FC<CreateGroupChatModalProps> = ({ isOpen, onClose, users }) => {
-
-  console.log("USERS ARRAY PASSED IS------->>>>>>",users)
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
   const [searchResults, setSearchResults] = useState<User[]>(users);
   const [groupName, setGroupName] = useState('');
-  const [groupImage, setGroupImage] = useState<File | null>(null); // File or null
+  const [groupImage, setGroupImage] = useState<File | null>(null);
 
   const { data: session } = useSession();
+  const { addGroup } = useGroupStore(); // Get the addGroup function from Zustand store
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const term = e.target.value;
@@ -42,7 +43,6 @@ const CreateGroupChatModal: React.FC<CreateGroupChatModalProps> = ({ isOpen, onC
     setSelectedUsers(selectedUsers.filter(selected => selected._id !== user._id));
   };
 
-  // Handle file upload for images
   const uploadHandler = async (file: File): Promise<string | null> => {
     const toastId = toast.loading('Uploading image...');
     try {
@@ -54,7 +54,6 @@ const CreateGroupChatModal: React.FC<CreateGroupChatModalProps> = ({ isOpen, onC
       formData.append('signature', signature);
       formData.append('timestamp', timestamp);
       formData.append('api_key', process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY!);
-      
 
       const res = await fetch(
         `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/upload`,
@@ -82,24 +81,21 @@ const CreateGroupChatModal: React.FC<CreateGroupChatModalProps> = ({ isOpen, onC
       alert('Please enter a group name and select at least one user.');
       return;
     }
-  
-    // Upload the group image and get the URL
+
     let groupImageUrl = null;
     if (groupImage) {
       groupImageUrl = await uploadHandler(groupImage);
     }
-  
-    // Prepare the JSON object
+
     const groupData = {
       name: groupName,
       image: groupImageUrl,
       admin: session?.user?._id as string,
       members: selectedUsers.map(user => user._id),
     };
-  
-    // Log the JSON object
+
     console.log('Group Data to be sent:', groupData);
-  
+
     try {
       const response = await fetch('/api/groups', {
         method: 'POST',
@@ -108,10 +104,21 @@ const CreateGroupChatModal: React.FC<CreateGroupChatModalProps> = ({ isOpen, onC
         },
         body: JSON.stringify(groupData),
       });
-  
+
       if (response.ok) {
         const newGroup = await response.json();
         console.log('Group created successfully:', newGroup);
+
+        // Add the new group to the Zustand store
+        addGroup({
+          groupId: newGroup._id,
+          isGroup: true,
+          name: groupName,
+          lastMessage: 'No messages yet',
+          sentAt: '',
+          imageSrc: groupImageUrl || '',
+        });
+
         onClose();
       } else {
         console.error('Failed to create group');
@@ -120,8 +127,6 @@ const CreateGroupChatModal: React.FC<CreateGroupChatModalProps> = ({ isOpen, onC
       console.error('Error creating group:', error);
     }
   };
-  
-  
 
   if (!isOpen) return null;
 
@@ -199,27 +204,24 @@ const CreateGroupChatModal: React.FC<CreateGroupChatModalProps> = ({ isOpen, onC
         </div>
 
         {/* User List */}
-        <div className="max-h-60 overflow-y-auto"> {/* Adjust the height as needed */}
-          <div className="flex flex-col gap-3">
-            {searchResults.map(user => (
-              <div
-                key={user._id}
-                className="flex items-center gap-3 p-2 border rounded cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSelectUser(user)}
-              >
-                <img
-                  src={user.image}
-                  alt={user.name}
-                  className="w-12 h-12 rounded-full object-cover"
-                />
-                <div className="flex-grow">
-                  <h3 className="text-md font-medium">{user.name}</h3>
-                </div>
-              </div>
-            ))}
-          </div>
+        <div className="max-h-60 overflow-auto">
+          {searchResults.map(user => (
+            <div
+              key={user._id}
+              onClick={() => handleSelectUser(user)}
+              className="flex items-center gap-2 p-2 hover:bg-gray-100 cursor-pointer rounded-lg"
+            >
+              <img
+                src={user.image}
+                alt={user.name}
+                className="w-8 h-8 rounded-full object-cover"
+              />
+              <span className="text-sm">{user.name}</span>
+            </div>
+          ))}
         </div>
 
+        {/* Create Group Button */}
         <button
           onClick={handleCreateGroup}
           className="mt-4 w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600"

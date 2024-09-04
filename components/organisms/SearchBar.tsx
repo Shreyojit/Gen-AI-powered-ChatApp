@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from "react";
 import Avatar from "../atoms/Avatar";
 import SearchBarInput from "../molecules/SearchBarInput";
-import { userProps } from "@/types";
 import IconButton from "../atoms/IconButton";
 import CreateGroupChatModal from "../CreateGroupChatModal";
+import UpdateUserModal from "../updateUserModal";
+import { userProps } from "@/types";
 
 interface User {
   _id: string;
   name: string;
-  image?: string; // Image is optional
+  email: string;
+  image?: string;
 }
 
 interface SearchBarProps {
@@ -16,65 +18,75 @@ interface SearchBarProps {
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({ user }) => {
-  console.log("THIS IS SEARCHBAR USER", user);
-
   const [isModalOpen, setModalOpen] = useState(false);
+  const [isUpdateModalOpen, setUpdateModalOpen] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   const fetchUsers = async () => {
     try {
-      console.log("Inside fetchUsers");
-  
-      // Log the entire user object to verify its structure
-      console.log("User object inside fetchUsers:", user);
-  
       const userId = user._id?.toString(); // Ensure _id is a string
-  
-      console.log("userID is this->>>>>>>>>>>>>", userId); // This should print the correct _id
-  
       if (!userId || userId === "1") {
         console.error("Invalid User ID detected:", userId);
         return; // Early return if userId is invalid
       }
-  
-      const response = await fetch(`http://localhost:3000/api/user/getAllContacts?excludeUserId=${userId}`);
+
+      const response = await fetch(`/api/user/getAllContacts?excludeUserId=${userId}`);
       const data = await response.json();
-  
-      console.log("Fetched users data:", data);
-  
+
       if (Array.isArray(data)) {
-        setUsers(data);
+        setUsers(data.map((u: any) => ({
+          _id: u._id,
+          name: u.name,
+          email: u.email,
+          image: u.image || ""
+        })));
       } else {
         console.error("Fetched data is not an array:", data);
-        setUsers([]); // Fallback to an empty array if the data is not as expected
+        setUsers([]);
       }
     } catch (error) {
       console.error("Error fetching users:", error);
     }
   };
-  
+
   useEffect(() => {
-    console.log("useEffect triggered"); // Log to check if useEffect is triggered
     if (user._id) {
       fetchUsers();
     } else {
-      console.log("user._id is not defined yet"); // Log if user._id is undefined
+      console.log("user._id is not defined yet");
     }
   }, [user._id]);
 
   const handleOpenModal = () => setModalOpen(true);
   const handleCloseModal = () => setModalOpen(false);
 
+  const handleAvatarClick = (user: User) => {
+    setSelectedUser(user);
+    setUpdateModalOpen(true);
+  };
+
+  const handleUpdateModalClose = () => {
+    setUpdateModalOpen(false);
+    setSelectedUser(null);
+  };
+
   return (
     <div className="bg-white rounded-lg w-full">
-      {/* Row 1: Avatar, IconButton */}
       <div className="flex items-center justify-between gap-4">
-        <Avatar imageSrc={user?.imageId || ""} />
+        <Avatar
+          imageSrc={user.imageId || ""}
+          onClick={() => handleAvatarClick({
+            _id: user._id || "",
+            name: user.name || "",
+            email: user.email || "",
+            image: user.imageId || ""
+          })}
+        />
         <IconButton onClick={handleOpenModal} className="ml-2" />
       </div>
 
-       {/* Row 2: SearchBarInput */}
-       <div className="mt-4">
+      <div className="mt-4">
         <SearchBarInput placeholder="Search" users={users} />
       </div>
 
@@ -84,9 +96,17 @@ const SearchBar: React.FC<SearchBarProps> = ({ user }) => {
         users={users.map((user) => ({
           _id: user._id,
           name: user.name,
-          image: user.image || "/path/to/default-avatar.png", // Use a default image if none is provided
+          image: user.image || "/path/to/default-avatar.png",
         }))}
       />
+
+      {selectedUser && (
+        <UpdateUserModal
+          isOpen={isUpdateModalOpen}
+          onClose={handleUpdateModalClose}
+          user={selectedUser}
+        />
+      )}
     </div>
   );
 };

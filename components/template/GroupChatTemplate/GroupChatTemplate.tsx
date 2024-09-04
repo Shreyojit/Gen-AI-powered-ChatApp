@@ -153,6 +153,7 @@ export interface GroupChatTemplateProps {
 }
 
 const GroupChatTemplate: React.FC<GroupChatTemplateProps> = ({ user, groupId, messages, onSendMessage, groupMembers }) => {
+  console.log("groupId----------->",groupId,typeof(groupId))
   const [inputValue, setInputValue] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -214,6 +215,7 @@ const GroupChatTemplate: React.FC<GroupChatTemplateProps> = ({ user, groupId, me
       message: messageToSend,
       sentAt: new Date(), // Ensure this is a Date object
     };
+    console.log("INSIDE GROUPCHAT TEMP----->",newMessage)
 
     try {
       const response = await fetch('http://localhost:3000/api/messages/group', {

@@ -45,7 +45,9 @@ export const config = {
           _id: user._id,
           email: user.email,
           name: user.name,
-          isAdmin: user.isAdmin,
+         
+          image: user.image,
+          isOnline: user.isOnline,
         }
       }
       if (trigger === 'update' && session) {
@@ -53,6 +55,9 @@ export const config = {
           ...token.user,
           email: session.user.email,
           name: session.user.name,
+          image: session.image,
+          isOnline: session.isOnline,
+
         }
       }
       return token

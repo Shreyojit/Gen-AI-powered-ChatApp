@@ -1,16 +1,10 @@
-'use client'
-
 import React, { useState, useEffect } from 'react';
 import Input from '../atoms/Input';
 import { SearchIcon } from '@/lib/utils/icons';
 import Icon from '../atoms/Icon';
-import { useSession } from 'next-auth/react';
 
-interface User {
-  _id: string;
-  name: string;
-  image?: string; // Image is optional
-}
+import { User } from '@/lib/models/User'; // Update import
+import { useChatStore } from '@/lib/hooks/singleStore';
 
 interface SearchBarInputProps {
   placeholder?: string;
@@ -20,27 +14,25 @@ interface SearchBarInputProps {
 const SearchBarInput: React.FC<SearchBarInputProps> = ({ placeholder, users }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
-
-  const { data: session } = useSession()
-  console.log(session)
-
-
+  const setSelectedUser = useChatStore((state) => state.setSelectedUser);
 
   useEffect(() => {
     if (searchTerm) {
-      // Filter users based on the search term
       const results = users.filter((user) =>
         user.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredUsers(results);
     } else {
-      // Clear filtered users when searchTerm is empty
       setFilteredUsers([]);
     }
   }, [searchTerm, users]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
+  };
+
+  const handleUserClick = (user: User) => {
+    setSelectedUser(user);
   };
 
   return (
@@ -52,13 +44,13 @@ const SearchBarInput: React.FC<SearchBarInputProps> = ({ placeholder, users }) =
       />
       <Icon src={<SearchIcon />} />
 
-      {/* Display filtered users only if searchTerm is not empty and there are matches */}
       {searchTerm && filteredUsers.length > 0 && (
         <div className="absolute top-full left-0 w-full bg-white border rounded-lg shadow-lg mt-2 z-10">
           {filteredUsers.map((user) => (
             <div
               key={user._id}
               className="flex items-center gap-4 p-2 cursor-pointer hover:bg-gray-100"
+              onClick={() => handleUserClick(user)}
             >
               <img
                 src={user.image || '/path/to/default-avatar.png'}

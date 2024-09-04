@@ -3,6 +3,7 @@ import Avatar from '../atoms/Avatar';
 import ConversationName from '../atoms/ConversationName';
 import MessagePreview from '../atoms/MessagePreview';
 import { useChatStore } from '@/lib/hooks/chatStore';
+import { useGroupStore } from '@/lib/hooks/groupStore';
 
 
 interface ChatListItemProps {
@@ -17,12 +18,15 @@ const ChatListItem: React.FC<ChatListItemProps> = ({ imageSrc, name, lastMessage
   // Access Zustand store methods
   const { setSelectedConversation, setSelectedGroup } = useChatStore();
 
+  const { groups } = useGroupStore();
+  console.log('Groups from store:', groups);
+
   const handleClick = () => {
     if (conversationId) {
       console.log('Single Chat Clicked:', conversationId);
       setSelectedConversation(conversationId); // Update Zustand store with the selected conversation
     } else if (groupId) {
-      console.log('Group Chat Clicked:', groupId);
+      console.log('Group Chat Clicked:', groupId,typeof(groupId));
       setSelectedGroup(groupId); // Update Zustand store with the selected group
     }
   };

@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 
 const Sidebar = () => {
   const { data: session, status } = useSession();
+  console.log(session)
   const [user, setUser] = useState<userProps | null>(null);
 
   // Handle side effects and loading state
@@ -35,6 +36,7 @@ const Sidebar = () => {
     // Optionally handle the case where user data is still not available
     return <div>No user data available</div>;
   }
+  console.log("USER IN SIDEBAR-------------------->",user)
 
   return (
     <div className='!block z-10 border-r-2 border-slate-400 md:w-1/2 lg:w-1/3 p-3 bg-white h-screen'>
