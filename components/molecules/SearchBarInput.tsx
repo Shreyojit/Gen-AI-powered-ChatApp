@@ -4,7 +4,9 @@ import { SearchIcon } from '@/lib/utils/icons';
 import Icon from '../atoms/Icon';
 
 import { User } from '@/lib/models/User'; // Update import
-import { useChatStore } from '@/lib/hooks/singleStore';
+
+import { useSession } from 'next-auth/react';
+import { useChatStore } from '@/lib/hooks/chatStore';
 
 interface SearchBarInputProps {
   placeholder?: string;
@@ -14,7 +16,11 @@ interface SearchBarInputProps {
 const SearchBarInput: React.FC<SearchBarInputProps> = ({ placeholder, users }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
-  const setSelectedUser = useChatStore((state) => state.setSelectedUser);
+  // const setSelectedUser = useChatStore((state) => state.setSelectedUser);
+  const setSelectedConversation = useChatStore((state) => state.setSelectedConversation);
+
+  const { data: session } = useSession();
+  console.log("INSIDE SEARCHBAR INP--->",session?.user._id,typeof(session?.user._id))
 
   useEffect(() => {
     if (searchTerm) {
@@ -32,7 +38,18 @@ const SearchBarInput: React.FC<SearchBarInputProps> = ({ placeholder, users }) =
   };
 
   const handleUserClick = (user: User) => {
-    setSelectedUser(user);
+    console.log("SELECTED USER IN LIST SEARCHBAR---->",user,typeof(user._id))
+    console.log("CONSTRUCTED STRING----->",user._id+"-"+session?.user._id)
+    
+    const constructedId = `${user._id}-${session?.user._id}`;
+    console.log("Constructed Conversation ID:", constructedId);
+    
+   
+  
+    // Store the constructed conversation ID in Zustand
+    setSelectedConversation(constructedId);
+    
+   
   };
 
   return (
